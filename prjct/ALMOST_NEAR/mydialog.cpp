@@ -3,10 +3,12 @@
 #include <QFileDialog>
 #include <QStringList>
 #include <QStringListModel>
+#include <QToolTip>
 #include <iostream>
 #include <vector>
 #include <fstream>
 #include <sstream>
+
 using namespace std;
 void qs(int* arr, int first, int last)
 {
@@ -37,8 +39,8 @@ vector<vector<int> > matrix_creator(int *true_arr, int num, int size)
     for (int i = 0; i < num; i++)
         arr[i] = i + 1;
     for (int i = 0; i < size; i++)
-        full_arr[i] = i + 1;	       //int full_arr[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    int n, m;                          //int true_arr[8] = { 0, 1, 3, 5, 7, 9, 11, 13 };
+        full_arr[i] = i + 1;
+    int n, m;
     n = size - 1;
     int k = num - 1;
     int l = 0;
@@ -172,6 +174,7 @@ MyDialog::MyDialog(QWidget *parent) :
     ui(new Ui::MyDialog)
 {
     ui->setupUi(this);
+
 }
 
 MyDialog::~MyDialog()
@@ -186,16 +189,44 @@ void MyDialog::on_pushButton_clicked()
     ui->label->setText(Nametoload);
 }
 
-void MyDialog::on_pushButton_4_clicked()
-{
-    this->close();
+void MyDialog::on_pushButton_4_clicked()      //SAVE BUTTON
+{   
+    QString filename=QFileDialog::getSaveFileName(this,tr("Save file"),"E://",".txt (*.txt*)");
+    Nametosave = filename;
+    ofstream save_stream;
+    string Nametosave_Copy = Nametosave.toStdString();
+    save_stream.open(Nametosave_Copy.c_str(),ios_base::out);
+
+    QStringList *stringList = new QStringList();
+    QStringListModel *listModel = new QStringListModel(*stringList, NULL);
+    ui->listView->setModel(listModel);
+
+    if(!save_stream.is_open())
+    {
+        stringList->append("failed to save the log");
+        listModel->setStringList(*stringList);
+        return ;
+    }
+    for(int i = 0;i<save_result->size();i++)
+    {
+        save_stream<<(*save_result)[i];save_stream<<'\n';
+    }
+    Nametosave_Copy= "saved to "+Nametosave_Copy;
+    QString address = QString::fromLocal8Bit(Nametosave_Copy.c_str());
+    stringList->append(address);
+    listModel->setStringList(*stringList);
+   save_stream.close();
 }
 
-void MyDialog::on_pushButton_3_clicked()
+void MyDialog::on_pushButton_3_clicked()          //SOLVEBUTTON
 {
     QStringList *stringList = new QStringList();
     QStringListModel *listModel = new QStringListModel(*stringList, NULL);
     ui->listView->setModel(listModel);
+
+    QStringList *stringList_2 = new QStringList();
+    QStringListModel *listModel_2 = new QStringListModel(*stringList_2, NULL);
+    ui->listView_2->setModel(listModel_2);
 
         int All_Goods;
         int All_Trades;
@@ -209,53 +240,82 @@ void MyDialog::on_pushButton_3_clicked()
             listModel->setStringList(*stringList);
             return ;
         }
+        bool wrongSymb = false;
+        QString info ;
         while (!file.eof())
         {
-            file >> chr;
-            if (chr <'0' || chr>'9')
+            info = "";
+            chr ='1';
+            while(chr!='\n')
             {
-                stringList->append("there are unacceptable symbols in the file.");
-                listModel->setStringList(*stringList);
-                return;
+                if (chr=='\n')
+                    break;
+                chr = file.get();
+                if(file.eof())
+                    break;
+                info+=chr;
             }
+            info+='\n';
+             stringList_2->append(info);
+        }
+        stringList_2->append(info);
+        listModel_2->setStringList(*stringList_2);
+        file.close();
+        file.open(string_Nametoload.c_str(), ios::in);
+        while(!file.eof())
+        {
+            file>>chr;
+            if (chr <'0' || chr>'9')
+                wrongSymb = true;
         }
         file.close();
+        if (wrongSymb)
+            stringList->append("there are unacceptable symbols in the file.");
+        else
+            stringList->append("opened sucessfully");
+        listModel->setStringList(*stringList);
+        if (wrongSymb)
+            return;
+
+        QStringList *stringList_3 = new QStringList();
+        QStringListModel *listModel_3 = new QStringListModel(*stringList_3, NULL);
+        ui->listView_3->setModel(listModel_3);
+        save_result = new vector<string>;
+        ////
         file.open(string_Nametoload.c_str(), ios::in);
         file >> All_Goods;
         file >> All_Trades;
-        file.close();
-        file.open(string_Nametoload.c_str(), ios::in);
+//        file.close();
+//        file.open(string_Nametoload.c_str(), ios::in);
         int num = 1;
+        QString str = "";
         for (int i = 1; i <= All_Goods; i++)
         {
         int size = i;
-        vector <int> thearr = the_arr(All_Goods, size, All_Trades, string_Nametoload.c_str());
-        string str = "";
+       vector<int> thearr = the_arr(All_Goods, size, All_Trades, string_Nametoload.c_str());
+        str = "";
         stringstream ss;
             ss<<i;
-            std::string str1;
+            string str1;
             ss>>str1;
-        str+="for ";str+=str1;str+=" goods the most popular combination is ";
+        str+="for ";str+=str1.c_str();str+=" goods the most popular combination is ";
         for (int j = 0; j < size; j++)
             {
             if (thearr[j] == 0)
-            {
-               str +="not found";
+             {
+                str +="not found";
                 break;
-            }
+             }
             stringstream ss;
                 ss<<thearr[j];
-                std::string str1;
+                string str1;
                 ss>>str1;
-          str+=(str1)+" ";
+          str+=(str1.c_str());
             }
-        QString qstr = QString::fromStdString(str);
-        stringList->append(qstr);
-        listModel->setStringList(*stringList);
-        //ui->listView->
-       // cout << endl;
+        stringList_3->append(str);
+        save_result->push_back(str.toStdString());
         }
-
+    listModel_3->setStringList(*stringList_3);
 }
 
 

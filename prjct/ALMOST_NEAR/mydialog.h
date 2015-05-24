@@ -1,6 +1,7 @@
 #ifndef MYDIALOG_H
 #define MYDIALOG_H
-
+#include <vector>
+#include <string>
 #include <QDialog>
 namespace Ui {
 class MyDialog;
@@ -23,6 +24,7 @@ private slots:
 
 
 private:
+    std::vector<std::string> *save_result;
     Ui::MyDialog *ui;
     QString Nametoload;
     QString Nametosave;
